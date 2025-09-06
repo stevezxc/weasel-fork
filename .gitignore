@@ -27,6 +27,7 @@ compile_commands.json
 /output/data/essay.txt
 /output/data/opencc/
 /output/data/*.yaml
+/output/data/*.gram
 /output/archives
 /include/glog
 /include/rime*.h
