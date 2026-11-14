@@ -162,7 +162,7 @@ uninst:
 
 call_uninstaller:
   ExecWait '"$R1\WeaselServer.exe" /quit'
-  ExecWait '"$R1\WeaselSetup.exe" /u'
+  ; Keep TSF profiles during upgrades so Windows does not add a default IME.
   ; Remove registry keys
   DeleteRegKey HKLM SOFTWARE\Rime
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Weasel"
@@ -177,11 +177,9 @@ call_uninstaller:
   SetRegView 32
   ; Remove files and uninstaller
   Delete  "$R1\data\opencc\*.*"
-  Delete  "$R1\data\preview\*.*"
   Delete  "$R1\data\*.*"
   Delete  "$R1\*.*"
   RMDir   "$R1\data\opencc"
-  RMDir   "$R1\data\preview"
   RMDir   "$R1\data"
   RMDir   "$R1"
   SetShellVarContext all
@@ -211,8 +209,11 @@ Section "Weasel"
   ; Reset INSTDIR for the new version
   StrCpy $INSTDIR "${WEASEL_ROOT}"
 
-  IfFileExists "$INSTDIR\WeaselServer.exe" 0 +2
-  ExecWait '"$INSTDIR\WeaselServer.exe" /quit'
+  ; Do not launch the old server again after removing its dependencies.
+  ${If} $0 != "Upgrade"
+    IfFileExists "$INSTDIR\WeaselServer.exe" 0 +2
+    ExecWait '"$INSTDIR\WeaselServer.exe" /quit'
+  ${EndIf}
 
   SetOverwrite try
   ; Set output path to the installation directory.
@@ -279,6 +280,7 @@ program_files:
   ${Endif}
 
   File "WeaselSetup.exe"
+  File "WeaselLanguageProfile.ps1"
   ; shared data files
   SetOutPath $INSTDIR\data
   File "data\*.yaml"
@@ -288,9 +290,6 @@ program_files:
   SetOutPath $INSTDIR\data\opencc
   File "data\opencc\*.json"
   File "data\opencc\*.ocd*"
-  ; images
-  SetOutPath $INSTDIR\data\preview
-  File "data\preview\*.png"
 
   SetOutPath $INSTDIR
 
@@ -397,11 +396,9 @@ Section "Uninstall"
   ; Remove files and uninstaller
   SetOutPath $TEMP
   Delete  "$INSTDIR\data\opencc\*.*"
-  Delete  "$INSTDIR\data\preview\*.*"
   Delete  "$INSTDIR\data\*.*"
   Delete  "$INSTDIR\*.*"
   RMDir  "$INSTDIR\data\opencc"
-  RMDir  "$INSTDIR\data\preview"
   RMDir  "$INSTDIR\data"
   RMDir  "$INSTDIR"
   SetShellVarContext all
